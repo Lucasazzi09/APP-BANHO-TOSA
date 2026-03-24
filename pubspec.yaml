@@ -1,0 +1,32 @@
+name: banho_tosa
+description: Sistema de gerenciamento para pet shop - banho e tosa
+publish_to: 'none'
+version: 1.0.0+1
+
+environment:
+  sdk: '>=3.0.0 <4.0.0'
+
+dependencies:
+  flutter:
+    sdk: flutter
+  cupertino_icons: ^1.0.2
+  intl: ^0.18.0
+  shared_preferences: ^2.2.0
+  web: ^1.0.0
+  firebase_core: ^3.6.0
+  firebase_auth: ^5.3.1
+  cloud_firestore: ^5.4.4
+  animate_do: ^4.2.0
+  image_picker: ^1.0.7  # Para selecionar fotos
+  pdf: ^3.10.0          # Para criar o PDF
+  printing: ^5.11.0     # Para gerar/imprimir o PDF
+
+
+
+dev_dependencies:
+  flutter_test:
+    sdk: flutter
+  flutter_lints: ^2.0.0
+
+flutter:
+  uses-material-design: true
