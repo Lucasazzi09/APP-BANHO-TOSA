@@ -1,7 +1,7 @@
 name: banho_tosa
 description: Sistema de gerenciamento para pet shop - banho e tosa
 publish_to: 'none'
-version: 1.0.0+3
+version: 1.0.1
 
 environment:
   sdk: '>=3.0.0 <4.0.0'
