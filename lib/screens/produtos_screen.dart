@@ -6,6 +6,8 @@ import 'package:animate_do/animate_do.dart';
 import '../models/produto.dart';
 import '../services/storage_service.dart';
 import '../services/pdf_service.dart';
+import 'estoque_baixo_screen.dart';
+import '../models/categoria_produto.dart';
 
 class ProdutosScreen extends StatefulWidget {
   const ProdutosScreen({super.key});
@@ -62,11 +64,17 @@ class _ProdutosScreenState extends State<ProdutosScreen> {
     await _pdfService.gerarCatalogoProdutos(_produtos);
   }
 
+  void _openEstoqueBaixoScreen() {
+    Navigator.push(context,
+        MaterialPageRoute(builder: (context) => const EstoqueBaixoScreen()));
+  }
+
   void _openForm({Produto? produto}) {
-    Navigator.push(
-      context,
-      MaterialPageRoute(
-        builder: (context) => _ProdutoFormScreen(
+    showDialog(
+      context: context,
+      builder: (context) => Dialog(
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+        child: _ProdutoFormScreen(
           produto: produto,
           onSave: _saveProduto,
         ),
@@ -86,6 +94,12 @@ class _ProdutosScreenState extends State<ProdutosScreen> {
         backgroundColor: Colors.purple,
         iconTheme: const IconThemeData(color: Colors.white),
         actions: [
+          // Botão Estoque Baixo
+          IconButton(
+            icon: const Icon(Icons.warning_amber_rounded),
+            tooltip: 'Ver Estoque Baixo',
+            onPressed: _openEstoqueBaixoScreen,
+          ),
           // Botão para Gerar PDF
           IconButton(
             icon: const Icon(Icons.picture_as_pdf),
@@ -205,25 +219,56 @@ class _ProdutoFormScreen extends StatefulWidget {
 }
 
 class _ProdutoFormScreenState extends State<_ProdutoFormScreen> {
+  final _storage = StorageService();
   final _formKey = GlobalKey<FormState>();
   final _nomeController = TextEditingController();
-  final _categoriaController = TextEditingController();
   final _precoController = TextEditingController();
   final _estoqueController = TextEditingController();
   final _minimoController = TextEditingController();
+
   String? _imagemBase64;
+  String? _selectedCategoria;
+  List<CategoriaProduto> _categorias = [];
 
   @override
   void initState() {
     super.initState();
+    // Ordem corrigida: Carrega dados do produto primeiro
     if (widget.produto != null) {
       _nomeController.text = widget.produto!.nome;
-      _categoriaController.text = widget.produto!.categoria;
+      _selectedCategoria = widget.produto!.categoria;
       _precoController.text = widget.produto!.preco.toString();
       _estoqueController.text = widget.produto!.estoque.toString();
       _minimoController.text = widget.produto!.estoqueMinimo.toString();
       _imagemBase64 = widget.produto!.imagemBase64;
     }
+    // Depois carrega categorias, garantindo que a categoria do produto seja incluída/validada
+    _loadCategorias();
+  }
+
+  void _loadCategorias() {
+    setState(() {
+      // 1. Carrega do storage
+      final rawCategorias = _storage.getCategoriasProdutos();
+
+      // 2. Remove duplicatas baseadas no nome (para evitar erro "2 or more items")
+      final seen = <String>{};
+      _categorias = rawCategorias.where((c) => seen.add(c.nome)).toList();
+
+      // 3. Garante que a categoria selecionada exista na lista (evita erro "Zero items")
+      if (_selectedCategoria != null &&
+          !_categorias.any((c) => c.nome == _selectedCategoria)) {
+        // Se a categoria antiga do produto foi apagada, adicionamos ela temporariamente
+        _categorias.add(CategoriaProduto(
+            id: 'temp', nome: _selectedCategoria!, icone: 'box'));
+      }
+
+      // 4. Segurança final: Se por algum motivo bizarro ainda não existir, limpa a seleção
+      if (_selectedCategoria != null &&
+          !_categorias.any((c) => c.nome == _selectedCategoria)) {
+        _selectedCategoria = null;
+      }
+    });
   }
 
   /// Função para selecionar imagem da galeria
@@ -253,7 +298,7 @@ class _ProdutoFormScreenState extends State<_ProdutoFormScreen> {
         id: widget.produto?.id ??
             DateTime.now().millisecondsSinceEpoch.toString(),
         nome: _nomeController.text,
-        categoria: _categoriaController.text,
+        categoria: _selectedCategoria!,
         preco:
             double.tryParse(_precoController.text.replaceAll(',', '.')) ?? 0.0,
         estoque: int.tryParse(_estoqueController.text) ?? 0,
@@ -274,69 +319,95 @@ class _ProdutoFormScreenState extends State<_ProdutoFormScreen> {
       } catch (_) {}
     }
 
-    return Scaffold(
-      appBar: AppBar(
-        title: Text(widget.produto == null ? 'Novo Produto' : 'Editar Produto'),
-        backgroundColor: Colors.purple,
-        foregroundColor: Colors.white,
-      ),
-      body: SingleChildScrollView(
-        padding: const EdgeInsets.all(16),
+    return SingleChildScrollView(
+      child: Padding(
+        padding: const EdgeInsets.all(24),
         child: Form(
           key: _formKey,
           child: Column(
             mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
+              Text(
+                widget.produto == null ? 'Novo Produto' : 'Editar Produto',
+                style: const TextStyle(
+                    fontSize: 22,
+                    fontWeight: FontWeight.bold,
+                    color: Colors.purple),
+                textAlign: TextAlign.center,
+              ),
+              const SizedBox(height: 20),
               // Área de Seleção de Imagem
-              GestureDetector(
-                onTap: _pickImage,
-                child: Container(
-                  height: 120,
-                  width: 120,
-                  decoration: BoxDecoration(
-                    color: Colors.grey.shade100,
-                    borderRadius: BorderRadius.circular(12),
-                    border: Border.all(color: Colors.grey.shade400),
-                    image: imageBytes != null
-                        ? DecorationImage(
-                            image: MemoryImage(imageBytes), fit: BoxFit.cover)
+              Center(
+                child: GestureDetector(
+                  onTap: _pickImage,
+                  child: Container(
+                    height: 110,
+                    width: 110,
+                    decoration: BoxDecoration(
+                      color: Colors.grey.shade100,
+                      shape: BoxShape.circle,
+                      border: Border.all(
+                          color: Colors.purple.withOpacity(0.5), width: 2),
+                      image: imageBytes != null
+                          ? DecorationImage(
+                              image: MemoryImage(imageBytes), fit: BoxFit.cover)
+                          : null,
+                    ),
+                    child: imageBytes == null
+                        ? Column(
+                            mainAxisAlignment: MainAxisAlignment.center,
+                            children: [
+                              Icon(Icons.add_a_photo,
+                                  size: 40, color: Colors.grey.shade600),
+                              const SizedBox(height: 4),
+                              Text('Adicionar Foto',
+                                  style: TextStyle(
+                                      color: Colors.grey.shade600,
+                                      fontSize: 12)),
+                            ],
+                          )
                         : null,
                   ),
-                  child: imageBytes == null
-                      ? Column(
-                          mainAxisAlignment: MainAxisAlignment.center,
-                          children: [
-                            Icon(Icons.add_a_photo,
-                                size: 40, color: Colors.grey.shade600),
-                            const SizedBox(height: 4),
-                            Text('Adicionar Foto',
-                                style: TextStyle(
-                                    color: Colors.grey.shade600, fontSize: 12)),
-                          ],
-                        )
-                      : null,
                 ),
               ),
               if (imageBytes != null)
                 TextButton(
                   onPressed: () => setState(() => _imagemBase64 = null),
                   child: const Text('Remover Foto',
-                      style: TextStyle(color: Colors.red)),
+                      style: TextStyle(color: Colors.red, fontSize: 12)),
                 ),
-              const SizedBox(height: 16),
+              const SizedBox(height: 20),
 
               // Campos do Formulário
               TextFormField(
                 controller: _nomeController,
-                decoration: const InputDecoration(labelText: 'Nome do Produto'),
+                decoration: const InputDecoration(
+                  labelText: 'Nome do Produto',
+                  prefixIcon: Icon(Icons.shopping_bag_outlined),
+                  border: OutlineInputBorder(),
+                  contentPadding:
+                      EdgeInsets.symmetric(horizontal: 12, vertical: 12),
+                ),
+                textCapitalization: TextCapitalization.sentences,
                 validator: (v) => v!.isEmpty ? 'Obrigatório' : null,
               ),
               const SizedBox(height: 16),
-              TextFormField(
-                controller: _categoriaController,
+              DropdownButtonFormField<String>(
+                value: _selectedCategoria,
                 decoration: const InputDecoration(
-                    labelText: 'Categoria (Ex: Ração, Shampoo)'),
-                validator: (v) => v!.isEmpty ? 'Obrigatório' : null,
+                  labelText: 'Categoria',
+                  prefixIcon: Icon(Icons.category_outlined),
+                  border: OutlineInputBorder(),
+                  contentPadding:
+                      EdgeInsets.symmetric(horizontal: 12, vertical: 12),
+                ),
+                items: _categorias
+                    .map((c) =>
+                        DropdownMenuItem(value: c.nome, child: Text(c.nome)))
+                    .toList(),
+                onChanged: (v) => setState(() => _selectedCategoria = v),
+                validator: (v) => v == null || v.isEmpty ? 'Obrigatório' : null,
               ),
               const SizedBox(height: 16),
               Row(
@@ -344,8 +415,13 @@ class _ProdutoFormScreenState extends State<_ProdutoFormScreen> {
                   Expanded(
                     child: TextFormField(
                       controller: _precoController,
-                      decoration:
-                          const InputDecoration(labelText: 'Preço (R\$)'),
+                      decoration: const InputDecoration(
+                        labelText: 'Preço',
+                        prefixText: 'R\$ ',
+                        border: OutlineInputBorder(),
+                        contentPadding:
+                            EdgeInsets.symmetric(horizontal: 12, vertical: 12),
+                      ),
                       keyboardType: TextInputType.number,
                       validator: (v) => v!.isEmpty ? 'Obrigatório' : null,
                     ),
@@ -354,8 +430,13 @@ class _ProdutoFormScreenState extends State<_ProdutoFormScreen> {
                   Expanded(
                     child: TextFormField(
                       controller: _estoqueController,
-                      decoration:
-                          const InputDecoration(labelText: 'Estoque Atual'),
+                      decoration: const InputDecoration(
+                        labelText: 'Qtd. Est Atual',
+                        suffixText: 'un',
+                        border: OutlineInputBorder(),
+                        contentPadding:
+                            EdgeInsets.symmetric(horizontal: 12, vertical: 12),
+                      ),
                       keyboardType: TextInputType.number,
                       validator: (v) => v!.isEmpty ? 'Obrigatório' : null,
                     ),
@@ -365,25 +446,31 @@ class _ProdutoFormScreenState extends State<_ProdutoFormScreen> {
               const SizedBox(height: 16),
               TextFormField(
                 controller: _minimoController,
-                decoration:
-                    const InputDecoration(labelText: 'Estoque Mínimo (Alerta)'),
+                decoration: const InputDecoration(
+                  labelText: 'Estoque Mínimo (Alerta)',
+                  prefixIcon: Icon(Icons.warning_amber),
+                  border: OutlineInputBorder(),
+                  contentPadding:
+                      EdgeInsets.symmetric(horizontal: 12, vertical: 12),
+                ),
                 keyboardType: TextInputType.number,
               ),
+              const SizedBox(height: 24),
+              Row(
+                mainAxisAlignment: MainAxisAlignment.end,
+                children: [
+                  TextButton(
+                    onPressed: () => Navigator.pop(context),
+                    child: const Text('Cancelar'),
+                  ),
+                  const SizedBox(width: 12),
+                  FilledButton(
+                    onPressed: _submit,
+                    child: const Text('Salvar'),
+                  ),
+                ],
+              )
             ],
-          ),
-        ),
-      ),
-      bottomNavigationBar: Padding(
-        padding: const EdgeInsets.all(16.0),
-        child: SizedBox(
-          height: 50,
-          child: ElevatedButton(
-            onPressed: _submit,
-            style: ElevatedButton.styleFrom(
-              backgroundColor: Colors.purple,
-              foregroundColor: Colors.white,
-            ),
-            child: const Text('Salvar Produto', style: TextStyle(fontSize: 18)),
           ),
         ),
       ),
