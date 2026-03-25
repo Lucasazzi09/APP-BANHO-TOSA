@@ -2,9 +2,10 @@ import 'package:flutter/material.dart';
 import 'package:animate_do/animate_do.dart';
 import '../models/produto.dart';
 import '../services/storage_service.dart';
+import '../services/pdf_service.dart';
 
 /// Tela de Relatório de Estoque Baixo
-/// 
+///
 /// Mostra produtos que estão abaixo do estoque mínimo
 /// Permite ajustar estoque diretamente
 class EstoqueBaixoScreen extends StatefulWidget {
@@ -16,6 +17,7 @@ class EstoqueBaixoScreen extends StatefulWidget {
 
 class _EstoqueBaixoScreenState extends State<EstoqueBaixoScreen> {
   final _storage = StorageService();
+  final _pdfService = PdfService();
   List<Produto> _produtosBaixos = [];
 
   @override
@@ -91,6 +93,11 @@ class _EstoqueBaixoScreenState extends State<EstoqueBaixoScreen> {
     }
   }
 
+  void _gerarPdf() async {
+    if (_produtosBaixos.isNotEmpty)
+      await _pdfService.gerarRelatorioEstoqueBaixo(_produtosBaixos);
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -98,6 +105,13 @@ class _EstoqueBaixoScreenState extends State<EstoqueBaixoScreen> {
         title: const Text('Estoque Baixo'),
         backgroundColor: Colors.red,
         foregroundColor: Colors.white,
+        actions: [
+          IconButton(
+            icon: const Icon(Icons.picture_as_pdf),
+            tooltip: 'Gerar PDF',
+            onPressed: _produtosBaixos.isEmpty ? null : _gerarPdf,
+          )
+        ],
       ),
       body: _produtosBaixos.isEmpty
           ? Center(
@@ -136,8 +150,9 @@ class _EstoqueBaixoScreenState extends State<EstoqueBaixoScreen> {
               separatorBuilder: (_, __) => const SizedBox(height: 12),
               itemBuilder: (context, index) {
                 final p = _produtosBaixos[index];
-                final percentual = (p.estoque / p.estoqueMinimo * 100).clamp(0, 100);
-                
+                final percentual =
+                    (p.estoque / p.estoqueMinimo * 100).clamp(0, 100);
+
                 return FadeInLeft(
                   delay: Duration(milliseconds: index * 100),
                   child: Card(

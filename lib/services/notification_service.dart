@@ -99,8 +99,9 @@ class NotificationService {
               'Prepare-se ou avise o cliente.');
         }
 
-        // Notificação 1 hora antes (entre 55-65 min)
-        if (diff.inMinutes >= 55 && diff.inMinutes <= 65) {
+        // Notificação 1 hora antes
+        // FIX: Janela ampliada (50-70 min) para garantir que o Timer (geralmente 15 em 15min) capture o momento.
+        if (diff.inMinutes >= 50 && diff.inMinutes <= 70) {
           _sendNotification(a, pets, clientes, '🐾 Agendamento em 1 hora!',
               'Confirme se está tudo pronto.');
         }

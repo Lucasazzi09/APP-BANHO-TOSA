@@ -46,20 +46,33 @@ class _PetsScreenState extends State<PetsScreen> {
     setState(() {
       _filtrados = q.isEmpty
           ? List.from(_pets)
-          : _pets.where((p) => p.nome.toLowerCase().contains(q) || p.raca.toLowerCase().contains(q)).toList();
+          : _pets
+              .where((p) =>
+                  p.nome.toLowerCase().contains(q) ||
+                  p.raca.toLowerCase().contains(q))
+              .toList();
     });
   }
 
   String _getClienteNome(String clienteId) {
-    return _clientes.firstWhere((c) => c.id == clienteId, orElse: () => Cliente(id: '', nome: 'Desconhecido', telefone: '', email: '', endereco: '')).nome;
+    return _clientes
+        .firstWhere((c) => c.id == clienteId,
+            orElse: () => Cliente(
+                id: '',
+                nome: 'Desconhecido',
+                telefone: '',
+                email: '',
+                endereco: ''))
+        .nome;
   }
 
-  Future<void> _openSheet([Pet? pet]) async {
-    final result = await showModalBottomSheet<Pet>(
+  Future<void> _openDialog([Pet? pet]) async {
+    final result = await showDialog<Pet>(
       context: context,
-      isScrollControlled: true,
-      backgroundColor: Colors.transparent,
-      builder: (_) => PetSheet(clientes: _clientes, pet: pet),
+      builder: (_) => Dialog(
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+        child: _PetForm(clientes: _clientes, pet: pet),
+      ),
     );
     if (result != null) {
       if (pet != null) {
@@ -80,7 +93,9 @@ class _PetsScreenState extends State<PetsScreen> {
         title: const Text('Excluir pet'),
         content: Text('Deseja excluir ${pet.nome}?'),
         actions: [
-          TextButton(onPressed: () => Navigator.pop(context, false), child: const Text('Cancelar')),
+          TextButton(
+              onPressed: () => Navigator.pop(context, false),
+              child: const Text('Cancelar')),
           FilledButton(
             style: FilledButton.styleFrom(backgroundColor: Colors.red),
             onPressed: () => Navigator.pop(context, true),
@@ -97,12 +112,12 @@ class _PetsScreenState extends State<PetsScreen> {
   }
 
   Color _porteColor(String porte) => switch (porte) {
-    'P' => Colors.green,
-    'M' => Colors.orange,
-    'G' => Colors.red,
-    'GG' => Colors.purple,
-    _ => Colors.grey,
-  };
+        'P' => Colors.green,
+        'M' => Colors.orange,
+        'G' => Colors.red,
+        'GG' => Colors.purple,
+        _ => Colors.grey,
+      };
 
   @override
   Widget build(BuildContext context) {
@@ -124,9 +139,14 @@ class _PetsScreenState extends State<PetsScreen> {
                 prefixIcon: const Icon(Icons.search, color: Colors.white70),
                 filled: true,
                 fillColor: Colors.white24,
-                border: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: BorderSide.none),
-                enabledBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: BorderSide.none),
-                contentPadding: const EdgeInsets.symmetric(vertical: 0, horizontal: 16),
+                border: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(12),
+                    borderSide: BorderSide.none),
+                enabledBorder: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(12),
+                    borderSide: BorderSide.none),
+                contentPadding:
+                    const EdgeInsets.symmetric(vertical: 0, horizontal: 16),
               ),
             ),
           ),
@@ -140,7 +160,9 @@ class _PetsScreenState extends State<PetsScreen> {
                   Icon(Icons.pets, size: 72, color: Colors.grey.shade300),
                   const SizedBox(height: 16),
                   Text(
-                    _pets.isEmpty ? 'Nenhum pet cadastrado' : 'Nenhum resultado encontrado',
+                    _pets.isEmpty
+                        ? 'Nenhum pet cadastrado'
+                        : 'Nenhum resultado encontrado',
                     style: TextStyle(color: Colors.grey.shade500, fontSize: 16),
                   ),
                 ],
@@ -155,10 +177,12 @@ class _PetsScreenState extends State<PetsScreen> {
                 final porteColor = _porteColor(pet.porte);
                 return Card(
                   child: ListTile(
-                    contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                    contentPadding:
+                        const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
                     leading: CircleAvatar(
                       radius: 24,
-                      backgroundColor: const Color(0xFF4CAF50).withOpacity(0.12),
+                      backgroundColor:
+                          const Color(0xFF4CAF50).withOpacity(0.12),
                       backgroundImage: pet.photoUrl != null
                           ? MemoryImage(
                               Uri.parse(pet.photoUrl!).data!.contentAsBytes(),
@@ -170,12 +194,21 @@ class _PetsScreenState extends State<PetsScreen> {
                     ),
                     title: Row(
                       children: [
-                        Text(pet.nome, style: const TextStyle(fontWeight: FontWeight.w600)),
+                        Text(pet.nome,
+                            style:
+                                const TextStyle(fontWeight: FontWeight.w600)),
                         const SizedBox(width: 8),
                         Container(
-                          padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
-                          decoration: BoxDecoration(color: porteColor.withOpacity(0.12), borderRadius: BorderRadius.circular(20)),
-                          child: Text(pet.porte, style: TextStyle(fontSize: 11, color: porteColor, fontWeight: FontWeight.w600)),
+                          padding: const EdgeInsets.symmetric(
+                              horizontal: 8, vertical: 2),
+                          decoration: BoxDecoration(
+                              color: porteColor.withOpacity(0.12),
+                              borderRadius: BorderRadius.circular(20)),
+                          child: Text(pet.porte,
+                              style: TextStyle(
+                                  fontSize: 11,
+                                  color: porteColor,
+                                  fontWeight: FontWeight.w600)),
                         ),
                       ],
                     ),
@@ -183,31 +216,56 @@ class _PetsScreenState extends State<PetsScreen> {
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
                         const SizedBox(height: 4),
-                        Text(pet.raca, style: TextStyle(color: Colors.grey.shade600, fontSize: 13)),
+                        Text(pet.raca,
+                            style: TextStyle(
+                                color: Colors.grey.shade600, fontSize: 13)),
                         Row(children: [
-                          Icon(Icons.person_outline, size: 13, color: Colors.grey.shade500),
+                          Icon(Icons.person_outline,
+                              size: 13, color: Colors.grey.shade500),
                           const SizedBox(width: 4),
-                          Text(_getClienteNome(pet.clienteId), style: TextStyle(fontSize: 13, color: Colors.grey.shade600)),
+                          Text(_getClienteNome(pet.clienteId),
+                              style: TextStyle(
+                                  fontSize: 13, color: Colors.grey.shade600)),
                         ]),
-                        if (pet.observacoes != null && pet.observacoes!.isNotEmpty)
-                          Text('Obs: ${pet.observacoes}', style: TextStyle(fontSize: 12, color: Colors.grey.shade500, fontStyle: FontStyle.italic)),
+                        if (pet.observacoes != null &&
+                            pet.observacoes!.isNotEmpty)
+                          Text('Obs: ${pet.observacoes}',
+                              style: TextStyle(
+                                  fontSize: 12,
+                                  color: Colors.grey.shade500,
+                                  fontStyle: FontStyle.italic)),
                       ],
                     ),
                     isThreeLine: true,
                     trailing: PopupMenuButton(
                       icon: Icon(Icons.more_vert, color: Colors.grey.shade400),
                       itemBuilder: (_) => [
-                        const PopupMenuItem(value: 'edit', child: Row(children: [Icon(Icons.edit_outlined, size: 18), SizedBox(width: 8), Text('Editar')])),
-                        const PopupMenuItem(value: 'delete', child: Row(children: [Icon(Icons.delete_outline, size: 18, color: Colors.red), SizedBox(width: 8), Text('Excluir', style: TextStyle(color: Colors.red))])),
+                        const PopupMenuItem(
+                            value: 'edit',
+                            child: Row(children: [
+                              Icon(Icons.edit_outlined, size: 18),
+                              SizedBox(width: 8),
+                              Text('Editar')
+                            ])),
+                        const PopupMenuItem(
+                            value: 'delete',
+                            child: Row(children: [
+                              Icon(Icons.delete_outline,
+                                  size: 18, color: Colors.red),
+                              SizedBox(width: 8),
+                              Text('Excluir',
+                                  style: TextStyle(color: Colors.red))
+                            ])),
                       ],
-                      onSelected: (v) => v == 'edit' ? _openSheet(pet) : _excluir(pet),
+                      onSelected: (v) =>
+                          v == 'edit' ? _openDialog(pet) : _excluir(pet),
                     ),
                   ),
                 );
               },
             ),
       floatingActionButton: FloatingActionButton.extended(
-        onPressed: () => _openSheet(),
+        onPressed: () => _openDialog(),
         icon: const Icon(Icons.add),
         label: const Text('Novo Pet'),
         backgroundColor: const Color(0xFF4CAF50),
@@ -217,21 +275,22 @@ class _PetsScreenState extends State<PetsScreen> {
   }
 }
 
-class PetSheet extends StatefulWidget {
+class _PetForm extends StatefulWidget {
   final List<Cliente> clientes;
   final Pet? pet;
-  const PetSheet({super.key, required this.clientes, this.pet});
+  const _PetForm({required this.clientes, this.pet});
 
   @override
-  State<PetSheet> createState() => _PetSheetState();
+  State<_PetForm> createState() => _PetFormState();
 }
 
-class _PetSheetState extends State<PetSheet> {
+class _PetFormState extends State<_PetForm> {
   final _formKey = GlobalKey<FormState>();
   final _imageService = ImageUploadService();
   late final _nomeController = TextEditingController(text: widget.pet?.nome);
   late final _racaController = TextEditingController(text: widget.pet?.raca);
-  late final _obsController = TextEditingController(text: widget.pet?.observacoes);
+  late final _obsController =
+      TextEditingController(text: widget.pet?.observacoes);
   late String? _clienteId = widget.pet?.clienteId;
   late String _porte = widget.pet?.porte ?? 'P';
   String? _photoUrl;
@@ -288,40 +347,47 @@ class _PetSheetState extends State<PetSheet> {
 
   @override
   Widget build(BuildContext context) {
-    final bottom = MediaQuery.of(context).viewInsets.bottom;
-    return Container(
-      decoration: const BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
-      ),
-      padding: EdgeInsets.fromLTRB(24, 16, 24, 24 + bottom),
+    return SingleChildScrollView(
+      padding: const EdgeInsets.all(24),
       child: Form(
         key: _formKey,
-        child: SingleChildScrollView(
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Center(
-                child: Container(width: 40, height: 4, decoration: BoxDecoration(color: Colors.grey.shade300, borderRadius: BorderRadius.circular(2))),
-              ),
-              const SizedBox(height: 20),
-              Text(
-                widget.pet == null ? 'Novo Pet' : 'Editar Pet',
-                style: const TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
-              ),
-              const SizedBox(height: 20),
-              Center(
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            Text(
+              widget.pet == null ? 'Novo Pet' : 'Editar Pet',
+              style: const TextStyle(
+                  fontSize: 22,
+                  fontWeight: FontWeight.bold,
+                  color: Color(0xFF4CAF50)),
+              textAlign: TextAlign.center,
+            ),
+            const SizedBox(height: 20),
+            Center(
+              child: GestureDetector(
+                onTap: _uploadingPhoto ? null : _selectPhoto,
                 child: Stack(
+                  alignment: Alignment.center,
                   children: [
-                    CircleAvatar(
-                      radius: 50,
-                      backgroundColor: const Color(0xFF4CAF50).withOpacity(0.12),
-                      backgroundImage: _photoUrl != null
-                          ? MemoryImage(
-                              Uri.parse(_photoUrl!).data!.contentAsBytes(),
-                            )
-                          : null,
+                    Container(
+                      height: 110,
+                      width: 110,
+                      decoration: BoxDecoration(
+                        color: const Color(0xFF4CAF50).withOpacity(0.12),
+                        shape: BoxShape.circle,
+                        border: Border.all(
+                            color: const Color(0xFF4CAF50).withOpacity(0.5),
+                            width: 2),
+                        image: _photoUrl != null
+                            ? DecorationImage(
+                                image: MemoryImage(Uri.parse(_photoUrl!)
+                                    .data!
+                                    .contentAsBytes()),
+                                fit: BoxFit.cover,
+                              )
+                            : null,
+                      ),
                       child: _photoUrl == null
                           ? const Icon(
                               Icons.pets,
@@ -331,121 +397,127 @@ class _PetSheetState extends State<PetSheet> {
                           : null,
                     ),
                     if (_uploadingPhoto)
-                      Positioned.fill(
-                        child: CircleAvatar(
-                          radius: 50,
-                          backgroundColor: Colors.black54,
-                          child: const CircularProgressIndicator(
-                            color: Colors.white,
-                          ),
+                      Container(
+                        height: 110,
+                        width: 110,
+                        decoration: const BoxDecoration(
+                          color: Colors.black45,
+                          shape: BoxShape.circle,
                         ),
+                        child: const Center(
+                            child:
+                                CircularProgressIndicator(color: Colors.white)),
                       ),
-                    Positioned(
-                      bottom: 0,
-                      right: 0,
-                      child: Material(
-                        color: const Color(0xFF4CAF50),
-                        shape: const CircleBorder(),
-                        child: InkWell(
-                          onTap: _uploadingPhoto ? null : _selectPhoto,
-                          customBorder: const CircleBorder(),
-                          child: const Padding(
-                            padding: EdgeInsets.all(8),
-                            child: Icon(
-                              Icons.camera_alt,
-                              size: 20,
-                              color: Colors.white,
-                            ),
-                          ),
-                        ),
-                      ),
-                    ),
                   ],
                 ),
               ),
-              if (_photoUrl != null) ...[
-                const SizedBox(height: 8),
-                Center(
-                  child: TextButton.icon(
-                    onPressed: _uploadingPhoto ? null : _removePhoto,
-                    icon: const Icon(Icons.delete_outline, size: 18),
-                    label: const Text('Remover Foto'),
-                    style: TextButton.styleFrom(
-                      foregroundColor: Colors.red,
-                    ),
-                  ),
+            ),
+            if (_photoUrl != null) ...[
+              Center(
+                child: TextButton(
+                  onPressed: _uploadingPhoto ? null : _removePhoto,
+                  child: const Text('Remover Foto',
+                      style: TextStyle(color: Colors.red)),
                 ),
-              ],
+              ),
+            ] else
               const SizedBox(height: 20),
-              TextFormField(
-                controller: _nomeController,
-                decoration: const InputDecoration(labelText: 'Nome do Pet', prefixIcon: Icon(Icons.pets)),
-                textCapitalization: TextCapitalization.words,
-                validator: (v) => v?.trim().isEmpty ?? true ? 'Obrigatório' : null,
+            TextFormField(
+              controller: _nomeController,
+              decoration: const InputDecoration(
+                labelText: 'Nome do Pet',
+                prefixIcon: Icon(Icons.pets),
+                border: OutlineInputBorder(),
               ),
-              const SizedBox(height: 12),
-              TextFormField(
-                controller: _racaController,
-                decoration: const InputDecoration(labelText: 'Raça', prefixIcon: Icon(Icons.category_outlined)),
-                textCapitalization: TextCapitalization.words,
-                validator: (v) => v?.trim().isEmpty ?? true ? 'Obrigatório' : null,
+              textCapitalization: TextCapitalization.words,
+              validator: (v) =>
+                  v?.trim().isEmpty ?? true ? 'Obrigatório' : null,
+            ),
+            const SizedBox(height: 16),
+            TextFormField(
+              controller: _racaController,
+              decoration: const InputDecoration(
+                labelText: 'Raça',
+                prefixIcon: Icon(Icons.category_outlined),
+                border: OutlineInputBorder(),
               ),
-              const SizedBox(height: 12),
-              DropdownButtonFormField<String>(
-                value: _porte,
-                decoration: const InputDecoration(labelText: 'Porte'),
-                items: ['P', 'M', 'G', 'GG'].map((p) => DropdownMenuItem(value: p, child: Text(p))).toList(),
-                onChanged: (v) => setState(() => _porte = v!),
+              textCapitalization: TextCapitalization.words,
+              validator: (v) =>
+                  v?.trim().isEmpty ?? true ? 'Obrigatório' : null,
+            ),
+            const SizedBox(height: 16),
+            DropdownButtonFormField<String>(
+              value: _porte,
+              decoration: const InputDecoration(
+                labelText: 'Porte',
+                border: OutlineInputBorder(),
               ),
-              const SizedBox(height: 12),
-              DropdownButtonFormField<String>(
-                value: _clienteId,
-                decoration: const InputDecoration(labelText: 'Dono', prefixIcon: Icon(Icons.person_outline)),
-                items: widget.clientes.map((c) => DropdownMenuItem(value: c.id, child: Text(c.nome))).toList(),
-                onChanged: (v) => setState(() => _clienteId = v),
-                validator: (v) => v == null ? 'Selecione um cliente' : null,
+              items: ['P', 'M', 'G', 'GG']
+                  .map((p) => DropdownMenuItem(value: p, child: Text(p)))
+                  .toList(),
+              onChanged: (v) => setState(() => _porte = v!),
+            ),
+            const SizedBox(height: 16),
+            DropdownButtonFormField<String>(
+              value: _clienteId,
+              decoration: const InputDecoration(
+                labelText: 'Dono',
+                prefixIcon: Icon(Icons.person_outline),
+                border: OutlineInputBorder(),
               ),
-              const SizedBox(height: 12),
-              TextFormField(
-                controller: _obsController,
-                decoration: const InputDecoration(labelText: 'Observações (opcional)', prefixIcon: Icon(Icons.notes_outlined)),
-                textCapitalization: TextCapitalization.sentences,
-                maxLines: 2,
+              items: widget.clientes
+                  .map(
+                      (c) => DropdownMenuItem(value: c.id, child: Text(c.nome)))
+                  .toList(),
+              onChanged: (v) => setState(() => _clienteId = v),
+              validator: (v) => v == null ? 'Selecione um cliente' : null,
+            ),
+            const SizedBox(height: 16),
+            TextFormField(
+              controller: _obsController,
+              decoration: const InputDecoration(
+                labelText: 'Observações (opcional)',
+                prefixIcon: Icon(Icons.notes_outlined),
+                border: OutlineInputBorder(),
               ),
-              const SizedBox(height: 24),
-              Row(
-                children: [
-                  Expanded(
-                    child: OutlinedButton(
-                      onPressed: () => Navigator.pop(context),
-                      style: OutlinedButton.styleFrom(padding: const EdgeInsets.symmetric(vertical: 14)),
-                      child: const Text('Cancelar'),
-                    ),
-                  ),
-                  const SizedBox(width: 12),
-                  Expanded(
-                    child: FilledButton(
-                      onPressed: () {
-                        if (_formKey.currentState!.validate()) {
-                          Navigator.pop(context, Pet(
-                            id: widget.pet?.id ?? DateTime.now().millisecondsSinceEpoch.toString(),
+              textCapitalization: TextCapitalization.sentences,
+              maxLines: 2,
+            ),
+            const SizedBox(height: 24),
+            Row(
+              mainAxisAlignment: MainAxisAlignment.end,
+              children: [
+                TextButton(
+                  onPressed: () => Navigator.pop(context),
+                  child: const Text('Cancelar'),
+                ),
+                const SizedBox(width: 12),
+                FilledButton(
+                  onPressed: () {
+                    if (_formKey.currentState!.validate()) {
+                      Navigator.pop(
+                          context,
+                          Pet(
+                            id: widget.pet?.id ??
+                                DateTime.now()
+                                    .millisecondsSinceEpoch
+                                    .toString(),
                             nome: _nomeController.text.trim(),
                             raca: _racaController.text.trim(),
                             porte: _porte,
                             clienteId: _clienteId!,
-                            observacoes: _obsController.text.trim().isEmpty ? null : _obsController.text.trim(),
+                            observacoes: _obsController.text.trim().isEmpty
+                                ? null
+                                : _obsController.text.trim(),
                             photoUrl: _photoUrl,
                           ));
-                        }
-                      },
-                      style: FilledButton.styleFrom(padding: const EdgeInsets.symmetric(vertical: 14)),
-                      child: const Text('Salvar'),
-                    ),
-                  ),
-                ],
-              ),
-            ],
-          ),
+                    }
+                  },
+                  child: const Text('Salvar'),
+                ),
+              ],
+            ),
+          ],
         ),
       ),
     );

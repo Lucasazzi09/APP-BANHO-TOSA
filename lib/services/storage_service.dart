@@ -28,6 +28,7 @@ class StorageService {
   static const _produtosKey = 'produtos';
   static const _servicosKey = 'servicos';
   static const _categoriasKey = 'categorias_produtos';
+  static const _themeKey = 'app_theme_mode'; // dark ou light
 
   static SharedPreferences? _prefs;
   static final FirebaseFirestore _firestore = FirebaseFirestore.instance;
@@ -206,6 +207,18 @@ class StorageService {
   Future<void> saveCategoriasProdutos(List<CategoriaProduto> categorias) async {
     final json = jsonEncode(categorias.map((c) => c.toJson()).toList());
     await _p.setString(_categoriasKey, json);
+  }
+
+  // ========== TEMA (CONFIGURAÇÕES) ==========
+
+  /// Retorna true se o tema for escuro, false se claro/sistema
+  bool isDarkMode() {
+    final theme = _p.getString(_themeKey);
+    return theme == 'dark';
+  }
+
+  Future<void> saveThemeMode(bool isDark) async {
+    await _p.setString(_themeKey, isDark ? 'dark' : 'light');
   }
 
   // ========== LIMPEZA DE DADOS (LGPD) ==========

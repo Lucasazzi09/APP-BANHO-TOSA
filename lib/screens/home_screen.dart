@@ -1,5 +1,6 @@
 import 'dart:convert';
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
 import 'package:animate_do/animate_do.dart';
 import '../services/storage_service.dart';
 import '../services/auth_service.dart';
@@ -12,6 +13,8 @@ import 'servicos_screen.dart';
 import 'relatorio_screen.dart';
 import 'settings_screen.dart';
 import 'login_screen.dart';
+import '../widgets/app_drawer.dart';
+import '../providers/user_provider.dart';
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
@@ -31,24 +34,23 @@ class _HomeScreenState extends State<HomeScreen> {
   double _faturamentoHoje = 0;
   int _agendamentosMes = 0;
   double _faturamentoMes = 0;
-  UserModel? _userData;
-  // bool _isLoading = true; // Removido: não usado no build
+  bool _isDarkMode = false;
 
   @override
   void initState() {
     super.initState();
+    // Dispara a busca de dados do usuário de forma global
+    Provider.of<UserProvider>(context, listen: false).fetchUser();
     // Sincroniza dados da nuvem ao iniciar o app
     _storage.sincronizarDados().then((_) => _loadData());
     _loadData();
+    _isDarkMode = _storage.isDarkMode();
   }
 
   /// Carrega dados do usuário e estatísticas
   /// Otimização: Carrega de forma assíncrona sem travar UI
   Future<void> _loadData() async {
     try {
-      // Carrega dados do usuário do Firestore
-      final userData = await _authService.getUserData();
-
       // Carrega estatísticas locais
       final clientes = _storage.getClientes();
       final pets = _storage.getPets();
@@ -68,7 +70,6 @@ class _HomeScreenState extends State<HomeScreen> {
           .toList();
 
       setState(() {
-        _userData = userData;
         _totalClientes = clientes.length;
         _totalPets = pets.length;
         _agendamentosHoje = agendamentosHoje.length;
@@ -104,20 +105,28 @@ class _HomeScreenState extends State<HomeScreen> {
   @override
   Widget build(BuildContext context) {
     final cs = Theme.of(context).colorScheme;
+    final userProvider = Provider.of<UserProvider>(context);
+    final userData = userProvider.user;
     return Scaffold(
       backgroundColor: cs.surface,
+      drawer: const AppDrawer(),
       body: CustomScrollView(
         slivers: [
           SliverAppBar(
             expandedHeight: 160,
             pinned: true,
             backgroundColor: cs.primary,
-            actions: [
-              IconButton(
-                icon: const Icon(Icons.settings_outlined, color: Colors.white),
-                onPressed: () => _navigate(const SettingsScreen()),
-                tooltip: 'Configurações',
+            // 🔹 Botão de Menu Personalizado
+            leading: Builder(
+              builder: (context) => IconButton(
+                icon: const Icon(Icons.menu_rounded,
+                    size: 28, color: Colors.white),
+                onPressed: () => Scaffold.of(context).openDrawer(),
+                tooltip: 'Menu Principal',
+                style: IconButton.styleFrom(shape: const CircleBorder()),
               ),
+            ),
+            actions: [
               IconButton(
                 icon: const Icon(Icons.logout, color: Colors.white),
                 onPressed: _logout,
@@ -154,11 +163,13 @@ class _HomeScreenState extends State<HomeScreen> {
                       child: FadeInLeft(
                         child: Row(
                           children: [
-                            if (_userData?.photoUrl != null)
+                            if (userData?.photoUrl != null &&
+                                userData!.photoUrl!.isNotEmpty)
                               CircleAvatar(
                                 radius: 25,
                                 backgroundImage: MemoryImage(
-                                  base64Decode(_userData!.photoUrl!),
+                                  base64Decode(
+                                      userData.photoUrl!.split(',').last),
                                 ),
                               )
                             else
@@ -176,7 +187,7 @@ class _HomeScreenState extends State<HomeScreen> {
                               crossAxisAlignment: CrossAxisAlignment.start,
                               children: [
                                 Text(
-                                  'Bem-vindo, ${_userData?.nome ?? "Usuário"}!',
+                                  'Bem-vindo, ${userData?.nome ?? "Usuário"}!',
                                   style: const TextStyle(
                                     color: Colors.white,
                                     fontSize: 20,
@@ -265,51 +276,6 @@ class _HomeScreenState extends State<HomeScreen> {
                 const SizedBox(height: 24),
                 FadeInUp(
                   delay: const Duration(milliseconds: 500),
-                  child: const _SectionTitle('Cadastros'),
-                ),
-                const SizedBox(height: 12),
-                FadeInLeft(
-                  delay: const Duration(milliseconds: 600),
-                  child: _MenuCard(
-                      title: 'Clientes',
-                      subtitle: '$_totalClientes cadastrados',
-                      icon: Icons.people_alt_rounded,
-                      color: const Color(0xFF4A90D9),
-                      onTap: () => _navigate(const ClientesScreen())),
-                ),
-                const SizedBox(height: 12),
-                FadeInLeft(
-                  delay: const Duration(milliseconds: 700),
-                  child: _MenuCard(
-                      title: 'Pets',
-                      subtitle: '$_totalPets cadastrados',
-                      icon: Icons.pets,
-                      color: const Color(0xFF4CAF50),
-                      onTap: () => _navigate(const PetsScreen())),
-                ),
-                const SizedBox(height: 12),
-                FadeInLeft(
-                  delay: const Duration(milliseconds: 800),
-                  child: _MenuCard(
-                      title: 'Produtos',
-                      subtitle: 'Controle de estoque',
-                      icon: Icons.inventory_2_outlined,
-                      color: const Color(0xFF9C27B0),
-                      onTap: () => _navigate(const ProdutosScreen())),
-                ),
-                const SizedBox(height: 12),
-                FadeInLeft(
-                  delay: const Duration(milliseconds: 900),
-                  child: _MenuCard(
-                      title: 'Serviços',
-                      subtitle: 'Preços por porte',
-                      icon: Icons.content_cut_outlined,
-                      color: const Color(0xFF00BCD4),
-                      onTap: () => _navigate(const ServicosScreen())),
-                ),
-                const SizedBox(height: 24),
-                FadeInUp(
-                  delay: const Duration(milliseconds: 1000),
                   child: const _SectionTitle('Operações'),
                 ),
                 const SizedBox(height: 12),

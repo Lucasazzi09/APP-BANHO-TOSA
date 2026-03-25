@@ -65,9 +65,60 @@ class PdfService {
     );
   }
 
+  /// Gera relatório específico de produtos com estoque baixo
+  Future<void> gerarRelatorioEstoqueBaixo(List<Produto> produtosBaixos) async {
+    final doc = pw.Document();
+
+    doc.addPage(
+      pw.MultiPage(
+        pageFormat: PdfPageFormat.a4,
+        build: (pw.Context context) {
+          return [
+            pw.Header(
+              level: 0,
+              child: pw.Text('Relatório de Estoque Baixo ⚠️',
+                  style: pw.TextStyle(
+                      fontSize: 24,
+                      fontWeight: pw.FontWeight.bold,
+                      color: PdfColors.red)),
+            ),
+            pw.SizedBox(height: 20),
+            pw.Table.fromTextArray(
+              context: context,
+              headers: ['Produto', 'Mínimo', 'Atual', 'Status'],
+              data: produtosBaixos
+                  .map((p) => [
+                        p.nome,
+                        p.estoqueMinimo.toString(),
+                        p.estoque.toString(),
+                        'CRÍTICO',
+                      ])
+                  .toList(),
+              border: pw.TableBorder.all(),
+              headerStyle: pw.TextStyle(
+                  fontWeight: pw.FontWeight.bold, color: PdfColors.white),
+              headerDecoration: const pw.BoxDecoration(color: PdfColors.red),
+              cellAlignments: {
+                0: pw.Alignment.centerLeft,
+                1: pw.Alignment.centerRight,
+                2: pw.Alignment.centerRight,
+                3: pw.Alignment.center,
+              },
+            ),
+          ];
+        },
+      ),
+    );
+
+    await Printing.layoutPdf(
+      onLayout: (PdfPageFormat format) async => doc.save(),
+      name: 'estoque_baixo.pdf',
+    );
+  }
+
   /// Gera um relatório de agendamentos em PDF
-  Future<void> gerarRelatorioAgendamentos(
-      List<Agendamento> agendamentos, List<Pet> pets, List<Cliente> clientes) async {
+  Future<void> gerarRelatorioAgendamentos(List<Agendamento> agendamentos,
+      List<Pet> pets, List<Cliente> clientes) async {
     final doc = pw.Document();
     final font = await PdfGoogleFonts.nunitoExtraLight();
 
@@ -83,9 +134,13 @@ class PdfService {
                 mainAxisAlignment: pw.MainAxisAlignment.spaceBetween,
                 children: [
                   pw.Text('Relatório de Agendamentos',
-                      style: pw.TextStyle(font: font, fontSize: 24, fontWeight: pw.FontWeight.bold)),
+                      style: pw.TextStyle(
+                          font: font,
+                          fontSize: 24,
+                          fontWeight: pw.FontWeight.bold)),
                   pw.Text(DateFormat('dd/MM/yyyy HH:mm').format(DateTime.now()),
-                      style: pw.TextStyle(font: font, fontSize: 12, color: PdfColors.grey)),
+                      style: pw.TextStyle(
+                          font: font, fontSize: 12, color: PdfColors.grey)),
                 ],
               ),
             ),
@@ -93,18 +148,40 @@ class PdfService {
             pw.Table.fromTextArray(
               context: context,
               border: pw.TableBorder.all(color: PdfColors.grey300),
-              headerStyle: pw.TextStyle(font: font, fontWeight: pw.FontWeight.bold, color: PdfColors.white),
+              headerStyle: pw.TextStyle(
+                  font: font,
+                  fontWeight: pw.FontWeight.bold,
+                  color: PdfColors.white),
               headerDecoration: const pw.BoxDecoration(color: PdfColors.purple),
               cellStyle: pw.TextStyle(font: font, fontSize: 10),
               cellAlignment: pw.Alignment.centerLeft,
               data: <List<String>>[
-                <String>['Data', 'Hora', 'Serviço', 'Pet', 'Cliente', 'Valor', 'Status'],
+                <String>[
+                  'Data',
+                  'Hora',
+                  'Serviço',
+                  'Pet',
+                  'Cliente',
+                  'Valor',
+                  'Status'
+                ],
                 ...agendamentos.map((a) {
                   final pet = pets.firstWhere((p) => p.id == a.petId,
-                      orElse: () => Pet(id: '', nome: '?', raca: '', porte: '', clienteId: ''));
-                  final cliente = clientes.firstWhere((c) => c.id == pet.clienteId,
-                      orElse: () => Cliente(id: '', nome: '?', telefone: '', email: '', endereco: ''));
-                  
+                      orElse: () => Pet(
+                          id: '',
+                          nome: '?',
+                          raca: '',
+                          porte: '',
+                          clienteId: ''));
+                  final cliente = clientes.firstWhere(
+                      (c) => c.id == pet.clienteId,
+                      orElse: () => Cliente(
+                          id: '',
+                          nome: '?',
+                          telefone: '',
+                          email: '',
+                          endereco: ''));
+
                   return [
                     DateFormat('dd/MM').format(a.dataHora),
                     DateFormat('HH:mm').format(a.dataHora),

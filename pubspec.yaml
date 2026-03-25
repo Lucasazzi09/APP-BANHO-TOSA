@@ -1,7 +1,7 @@
 name: banho_tosa
 description: Sistema de gerenciamento para pet shop - banho e tosa
 publish_to: 'none'
-version: 1.0.0+1
+version: 1.0.0+3
 
 environment:
   sdk: '>=3.0.0 <4.0.0'
@@ -20,6 +20,7 @@ dependencies:
   image_picker: ^1.0.7  # Para selecionar fotos
   pdf: ^3.10.0          # Para criar o PDF
   printing: ^5.11.0     # Para gerar/imprimir o PDF
+  provider: ^6.1.2      # Para gerenciamento de estado (tema)
 
 
 

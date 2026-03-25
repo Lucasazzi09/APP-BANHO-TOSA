@@ -1,5 +1,7 @@
+import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:animate_do/animate_do.dart';
+import 'package:provider/provider.dart';
 import '../services/auth_service.dart';
 import '../services/storage_service.dart';
 import '../services/image_upload_service.dart';
@@ -7,9 +9,11 @@ import '../config/app_constants.dart';
 import '../models/user_model.dart';
 import 'privacy_policy_screen.dart';
 import 'login_screen.dart';
+import 'package:banho_tosa/providers/user_provider.dart';
+import 'package:banho_tosa/providers/theme_provider.dart';
 
 /// Tela de Configurações
-/// 
+///
 /// Funcionalidades:
 /// - Visualizar e editar foto de perfil
 /// - Visualizar informações da conta
@@ -28,20 +32,11 @@ class _SettingsScreenState extends State<SettingsScreen> {
   final _imageService = ImageUploadService();
   bool _loading = false;
   bool _uploadingPhoto = false;
-  UserModel? _userData;
 
   @override
   void initState() {
     super.initState();
-    _loadUserData();
-  }
-
-  /// Carrega dados do usuário do Firestore
-  Future<void> _loadUserData() async {
-    final userData = await _authService.getUserData();
-    setState(() {
-      _userData = userData;
-    });
+    // O UserProvider já é carregado na HomeScreen.
   }
 
   /// Seleciona e faz upload de foto de perfil
@@ -64,7 +59,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
 
       // Salva Base64 no Firestore
       await _authService.updateProfilePhoto(photoBase64);
-      await _loadUserData();
+      await Provider.of<UserProvider>(context, listen: false).fetchUser();
 
       setState(() => _uploadingPhoto = false);
 
@@ -114,7 +109,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
 
     try {
       await _authService.removeProfilePhoto();
-      await _loadUserData();
+      await Provider.of<UserProvider>(context, listen: false).fetchUser();
 
       setState(() => _uploadingPhoto = false);
 
@@ -205,6 +200,10 @@ class _SettingsScreenState extends State<SettingsScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final themeProvider = Provider.of<ThemeProvider>(context);
+    final userProvider = Provider.of<UserProvider>(context);
+    final userData = userProvider.user;
+
     return Scaffold(
       appBar: AppBar(
         title: const Text('Configurações'),
@@ -222,13 +221,19 @@ class _SettingsScreenState extends State<SettingsScreen> {
                       children: [
                         CircleAvatar(
                           radius: 50,
-                          backgroundColor: Theme.of(context).colorScheme.primary.withOpacity(0.1),
-                          backgroundImage: _userData?.photoUrl != null
+                          backgroundColor: Theme.of(context)
+                              .colorScheme
+                              .primary
+                              .withOpacity(0.1),
+                          backgroundImage: userData?.photoUrl != null &&
+                                  userData!.photoUrl!.isNotEmpty
                               ? MemoryImage(
-                                  Uri.parse(_userData!.photoUrl!).data!.contentAsBytes(),
+                                  base64Decode(
+                                      userData.photoUrl!.split(',').last),
                                 )
                               : null,
-                          child: _userData?.photoUrl == null
+                          child: (userData?.photoUrl == null ||
+                                  userData!.photoUrl!.isEmpty)
                               ? Icon(
                                   Icons.person,
                                   size: 50,
@@ -253,7 +258,8 @@ class _SettingsScreenState extends State<SettingsScreen> {
                             color: Theme.of(context).colorScheme.primary,
                             shape: const CircleBorder(),
                             child: InkWell(
-                              onTap: _uploadingPhoto ? null : _uploadProfilePhoto,
+                              onTap:
+                                  _uploadingPhoto ? null : _uploadProfilePhoto,
                               customBorder: const CircleBorder(),
                               child: const Padding(
                                 padding: EdgeInsets.all(8),
@@ -270,7 +276,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                     ),
                     const SizedBox(height: 16),
                     Text(
-                      _userData?.nome ?? 'Carregando...',
+                      userData?.nome ?? 'Carregando...',
                       style: const TextStyle(
                         fontSize: 20,
                         fontWeight: FontWeight.bold,
@@ -278,13 +284,14 @@ class _SettingsScreenState extends State<SettingsScreen> {
                     ),
                     const SizedBox(height: 4),
                     Text(
-                      _userData?.email ?? '',
+                      userData?.email ?? '',
                       style: TextStyle(
                         fontSize: 14,
                         color: Colors.grey.shade600,
                       ),
                     ),
-                    if (_userData?.photoUrl != null) ...[
+                    if (userData?.photoUrl != null &&
+                        userData!.photoUrl!.isNotEmpty) ...[
                       const SizedBox(height: 12),
                       TextButton.icon(
                         onPressed: _uploadingPhoto ? null : _removeProfilePhoto,
@@ -331,9 +338,35 @@ class _SettingsScreenState extends State<SettingsScreen> {
               onTap: () {
                 Navigator.push(
                   context,
-                  MaterialPageRoute(builder: (_) => const PrivacyPolicyScreen()),
+                  MaterialPageRoute(
+                      builder: (_) => const PrivacyPolicyScreen()),
                 );
               },
+            ),
+          ),
+          const SizedBox(height: 24),
+          FadeInLeft(
+            delay: const Duration(milliseconds: 350),
+            child: const Text(
+              'Aparência',
+              style: TextStyle(
+                fontSize: 14,
+                fontWeight: FontWeight.bold,
+                color: Colors.grey,
+              ),
+            ),
+          ),
+          const SizedBox(height: 8),
+          FadeInLeft(
+            delay: const Duration(milliseconds: 400),
+            child: SwitchListTile(
+              title: const Text('Modo Escuro'),
+              secondary: Icon(themeProvider.isDarkMode
+                  ? Icons.dark_mode
+                  : Icons.light_mode),
+              value: themeProvider.isDarkMode,
+              onChanged: (val) => themeProvider.toggleTheme(val),
+              activeColor: Colors.purple,
             ),
           ),
           const SizedBox(height: 24),
