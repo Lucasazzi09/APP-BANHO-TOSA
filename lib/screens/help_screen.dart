@@ -55,7 +55,7 @@ class HelpScreen extends StatelessWidget {
           const SizedBox(height: 30),
           Center(
             child: Text(
-              'Banho & Tosa App v1.0.0',
+              'Banho & Tosa App v1.0.1',
               style: TextStyle(color: Colors.grey.shade400),
             ),
           ),
