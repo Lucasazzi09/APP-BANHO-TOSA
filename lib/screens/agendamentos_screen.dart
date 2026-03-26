@@ -495,9 +495,10 @@ class _AgendamentoSheetState extends State<AgendamentoSheet> {
     if (date != null && mounted) {
       final time = await showTimePicker(
           context: context, initialTime: TimeOfDay.fromDateTime(_dataHora));
-      if (time != null)
+      if (time != null) {
         setState(() => _dataHora =
             DateTime(date.year, date.month, date.day, time.hour, time.minute));
+      }
     }
   }
 

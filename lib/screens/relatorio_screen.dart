@@ -185,7 +185,7 @@ class _RelatorioScreenState extends State<RelatorioScreen> {
           const Divider(),
           Expanded(
             child: _agendamentosFiltrados.isEmpty
-                ? Center(
+                ? const Center(
                     child: Text('Nenhum agendamento encontrado no período.'))
                 : ListView.builder(
                     itemCount: _agendamentosFiltrados.length,

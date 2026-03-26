@@ -2,7 +2,6 @@ import 'dart:convert';
 import 'dart:typed_data';
 import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
-import 'package:animate_do/animate_do.dart';
 import '../models/produto.dart';
 import '../services/storage_service.dart';
 import '../services/pdf_service.dart';

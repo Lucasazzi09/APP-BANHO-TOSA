@@ -156,8 +156,9 @@ class _LoginScreenState extends State<LoginScreen> {
                                   prefixIcon: Icon(Icons.person_outline),
                                 ),
                                 validator: (v) {
-                                  if (v == null || v.isEmpty)
+                                  if (v == null || v.isEmpty) {
                                     return 'Digite o usuário ou email';
+                                  }
                                   return null;
                                 },
                               ),
@@ -178,10 +179,12 @@ class _LoginScreenState extends State<LoginScreen> {
                                   ),
                                 ),
                                 validator: (v) {
-                                  if (v == null || v.isEmpty)
+                                  if (v == null || v.isEmpty) {
                                     return 'Digite a senha';
-                                  if (v.length < 6)
+                                  }
+                                  if (v.length < 6) {
                                     return 'Mínimo 6 caracteres';
+                                  }
                                   return null;
                                 },
                                 onFieldSubmitted: (_) => _login(),

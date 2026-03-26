@@ -117,8 +117,9 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
                               prefixIcon: Icon(Icons.person_outline),
                             ),
                             validator: (v) {
-                              if (v == null || v.isEmpty)
+                              if (v == null || v.isEmpty) {
                                 return 'Informe o email ou usuário';
+                              }
                               return null;
                             },
                             onFieldSubmitted: (_) => _resetPassword(),

@@ -94,8 +94,9 @@ class _EstoqueBaixoScreenState extends State<EstoqueBaixoScreen> {
   }
 
   void _gerarPdf() async {
-    if (_produtosBaixos.isNotEmpty)
+    if (_produtosBaixos.isNotEmpty) {
       await _pdfService.gerarRelatorioEstoqueBaixo(_produtosBaixos);
+    }
   }
 
   @override

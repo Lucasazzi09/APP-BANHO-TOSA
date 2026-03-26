@@ -242,11 +242,11 @@ class _SettingsScreenState extends State<SettingsScreen> {
                               : null,
                         ),
                         if (_uploadingPhoto)
-                          Positioned.fill(
+                          const Positioned.fill(
                             child: CircleAvatar(
                               radius: 50,
                               backgroundColor: Colors.black54,
-                              child: const CircularProgressIndicator(
+                              child: CircularProgressIndicator(
                                 color: Colors.white,
                               ),
                             ),
