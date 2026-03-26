@@ -5,7 +5,6 @@ import 'config/firebase_config.dart';
 import 'screens/login_screen.dart';
 import 'services/storage_service.dart';
 import 'services/notification_service.dart';
-import 'services/estoque_notification_service.dart';
 import 'package:provider/provider.dart';
 import 'package:banho_tosa/providers/theme_provider.dart';
 import 'package:banho_tosa/providers/user_provider.dart';
@@ -42,9 +41,6 @@ void main() async {
 
   // Inicializar serviço de notificações (apenas Web)
   await NotificationService.init();
-
-  // Inicializar serviço de notificações de estoque baixo
-  await EstoqueNotificationService.init();
 
   runApp(const BanhoTosaApp());
 }

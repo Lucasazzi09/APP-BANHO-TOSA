@@ -1,8 +1,9 @@
+import 'dart:convert';
 import 'package:flutter/material.dart';
+import 'package:image_picker/image_picker.dart';
 import '../models/pet.dart';
 import '../models/cliente.dart';
 import '../services/storage_service.dart';
-import '../services/image_upload_service.dart';
 
 class PetsScreen extends StatefulWidget {
   const PetsScreen({super.key});
@@ -286,7 +287,6 @@ class _PetForm extends StatefulWidget {
 
 class _PetFormState extends State<_PetForm> {
   final _formKey = GlobalKey<FormState>();
-  final _imageService = ImageUploadService();
   late final _nomeController = TextEditingController(text: widget.pet?.nome);
   late final _racaController = TextEditingController(text: widget.pet?.raca);
   late final _obsController =
@@ -303,24 +303,52 @@ class _PetFormState extends State<_PetForm> {
   }
 
   Future<void> _selectPhoto() async {
-    final source = await ImageUploadService.showImageSourceDialog(context);
+    final source = await showDialog<ImageSource>(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('Escolher Foto'),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            ListTile(
+              leading: const Icon(Icons.photo_library),
+              title: const Text('Galeria'),
+              onTap: () => Navigator.pop(context, ImageSource.gallery),
+            ),
+            ListTile(
+              leading: const Icon(Icons.camera_alt),
+              title: const Text('Câmera'),
+              onTap: () => Navigator.pop(context, ImageSource.camera),
+            ),
+          ],
+        ),
+      ),
+    );
+
     if (source == null) return;
 
     setState(() => _uploadingPhoto = true);
 
     try {
-      final photoBase64 = source == 'gallery'
-          ? await _imageService.pickImageFromGallery()
-          : await _imageService.pickImageFromCamera();
+      final ImagePicker picker = ImagePicker();
+      final XFile? image = await picker.pickImage(
+        source: source,
+        maxWidth: 400,
+        imageQuality: 70,
+      );
 
-      if (photoBase64 != null) {
-        setState(() {
-          _photoUrl = photoBase64;
-          _uploadingPhoto = false;
-        });
-      } else {
+      if (image == null) {
         setState(() => _uploadingPhoto = false);
+        return;
       }
+
+      final bytes = await image.readAsBytes();
+      final photoBase64 = 'data:image/jpeg;base64,${base64Encode(bytes)}';
+
+      setState(() {
+        _photoUrl = photoBase64;
+        _uploadingPhoto = false;
+      });
     } catch (e) {
       setState(() => _uploadingPhoto = false);
       if (!mounted) return;
