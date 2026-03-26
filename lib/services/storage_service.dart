@@ -17,8 +17,8 @@ import '../models/categoria_produto.dart';
 /// - Gerenciar cache de dados
 ///
 /// ATENÇÃO LGPD:
-/// - Dados são armazenados em texto puro (sem criptografia)
-/// - Para produção, considere usar flutter_secure_storage
+/// - Para produção Web, considere criptografar o JSON antes do save.
+/// - Implementada limpeza completa no logout/exclusão.
 /// - Implemente política de retenção de dados
 class StorageService {
   // Chaves de armazenamento
@@ -256,25 +256,25 @@ class StorageService {
     if (_userDoc == null) return;
 
     try {
-      final collections = [
-        {'key': _clientesKey, 'doc': 'clientes'},
-        {'key': _petsKey, 'doc': 'pets'},
-        {'key': _agendamentosKey, 'doc': 'agendamentos'},
-        {'key': _produtosKey, 'doc': 'produtos'},
-        {'key': _servicosKey, 'doc': 'servicos'},
-        {'key': _categoriasKey, 'doc': 'categorias_produtos'},
-      ];
+      final Map<String, String> syncMap = {
+        'clientes': _clientesKey,
+        'pets': _petsKey,
+        'agendamentos': _agendamentosKey,
+        'produtos': _produtosKey,
+        'servicos': _servicosKey,
+        'categorias_produtos': _categoriasKey,
+      };
 
-      for (var item in collections) {
+      for (var entry in syncMap.entries) {
         final docSnapshot =
-            await _userDoc!.collection('backup_data').doc(item['doc']).get();
-        if (docSnapshot.exists && docSnapshot.data() != null) {
-          final dataMap = docSnapshot.data() as Map<String, dynamic>;
-          if (dataMap.containsKey('data')) {
-            final jsonCloud = dataMap['data'] as String;
-            if (jsonCloud.isNotEmpty && jsonCloud != '[]') {
-              await _p.setString(item['key']!, jsonCloud);
-            }
+            await _userDoc!.collection('backup_data').doc(entry.key).get();
+
+        if (docSnapshot.exists) {
+          final data = docSnapshot.data() as Map<String, dynamic>?;
+          final jsonCloud = data?['data'] as String?;
+
+          if (jsonCloud != null && jsonCloud.isNotEmpty && jsonCloud != '[]') {
+            await _p.setString(entry.value, jsonCloud);
           }
         }
       }

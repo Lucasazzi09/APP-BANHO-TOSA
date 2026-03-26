@@ -4,12 +4,13 @@ import 'package:animate_do/animate_do.dart';
 import 'package:provider/provider.dart';
 import '../services/auth_service.dart';
 import '../services/storage_service.dart';
-import '../services/image_upload_service.dart';
 import '../config/app_constants.dart';
+import '../models/user_model.dart';
 import 'privacy_policy_screen.dart';
 import 'login_screen.dart';
 import 'package:banho_tosa/providers/user_provider.dart';
 import 'package:banho_tosa/providers/theme_provider.dart';
+import 'package:image_picker/image_picker.dart';
 
 /// Tela de Configurações
 ///
@@ -28,7 +29,6 @@ class SettingsScreen extends StatefulWidget {
 class _SettingsScreenState extends State<SettingsScreen> {
   final _authService = AuthService();
   final _storage = StorageService();
-  final _imageService = ImageUploadService();
   bool _loading = false;
   bool _uploadingPhoto = false;
 
@@ -40,21 +40,47 @@ class _SettingsScreenState extends State<SettingsScreen> {
 
   /// Seleciona e faz upload de foto de perfil
   Future<void> _uploadProfilePhoto() async {
-    final source = await ImageUploadService.showImageSourceDialog(context);
+    final source = await showDialog<ImageSource>(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('Escolher Foto'),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            ListTile(
+              leading: const Icon(Icons.photo_library),
+              title: const Text('Galeria'),
+              onTap: () => Navigator.pop(context, ImageSource.gallery),
+            ),
+            ListTile(
+              leading: const Icon(Icons.camera_alt),
+              title: const Text('Câmera'),
+              onTap: () => Navigator.pop(context, ImageSource.camera),
+            ),
+          ],
+        ),
+      ),
+    );
+
     if (source == null) return;
 
     setState(() => _uploadingPhoto = true);
 
     try {
-      // Seleciona imagem e converte para Base64
-      final photoBase64 = source == 'gallery'
-          ? await _imageService.pickImageFromGallery()
-          : await _imageService.pickImageFromCamera();
+      final ImagePicker picker = ImagePicker();
+      final XFile? image = await picker.pickImage(
+        source: source,
+        maxWidth: 400,
+        imageQuality: 70,
+      );
 
-      if (photoBase64 == null) {
+      if (image == null) {
         setState(() => _uploadingPhoto = false);
         return;
       }
+
+      final bytes = await image.readAsBytes();
+      final photoBase64 = 'data:image/jpeg;base64,${base64Encode(bytes)}';
 
       // Salva Base64 no Firestore
       await _authService.updateProfilePhoto(photoBase64);
@@ -241,11 +267,11 @@ class _SettingsScreenState extends State<SettingsScreen> {
                               : null,
                         ),
                         if (_uploadingPhoto)
-                          const Positioned.fill(
+                          Positioned.fill(
                             child: CircleAvatar(
                               radius: 50,
                               backgroundColor: Colors.black54,
-                              child: CircularProgressIndicator(
+                              child: const CircularProgressIndicator(
                                 color: Colors.white,
                               ),
                             ),

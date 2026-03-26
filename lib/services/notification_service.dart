@@ -20,6 +20,7 @@ import 'package:web/web.dart' as web;
 /// OTIMIZAÇÃO:
 /// - Timer só é iniciado se houver agendamentos pendentes
 /// - Verificação a cada 15 minutos (configurável)
+/// - Integrada verificação de estoque baixo
 class NotificationService {
   static Timer? _timer;
   static bool _isRunning = false;
@@ -66,6 +67,7 @@ class NotificationService {
 
     _isRunning = true;
     _checkAndNotify();
+    _checkEstoque(); // Verifica estoque na inicialização
     _timer = Timer.periodic(
       AppConstants.notificationCheckInterval,
       (_) => _checkAndNotify(),
@@ -108,17 +110,31 @@ class NotificationService {
 
         // Notificação na hora (entre -5 e +5 min)
         if (diff.inMinutes >= -5 && diff.inMinutes <= 5) {
-          _sendNotification(a, pets, clientes, '🐾 Agendamento agora!',
-              'O pet deve chegar a qualquer momento.');
+          _sendNotification(a, pets, clientes, '🐾 Atendimento Agora!',
+              'O horário de atendimento começou. Verifique os materiais.');
         }
       }
 
-      // Para o timer se não houver mais agendamentos pendentes
-      if (!hasPending) {
-        stop();
-      }
+      _checkEstoque();
+
+      if (!hasPending) stop();
     } catch (e) {
       debugPrint('Erro ao verificar agendamentos: $e');
+    }
+  }
+
+  /// Verifica produtos com estoque baixo
+  static void _checkEstoque() {
+    final storage = StorageService();
+    final produtos = storage.getProdutos();
+
+    for (final p in produtos) {
+      if (p.estoque <= p.estoqueMinimo) {
+        _send(
+          title: '⚠️ Estoque Baixo!',
+          body: '${p.nome}: ${p.estoque} un restante(s).',
+        );
+      }
     }
   }
 
