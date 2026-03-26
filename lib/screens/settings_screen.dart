@@ -6,7 +6,6 @@ import '../services/auth_service.dart';
 import '../services/storage_service.dart';
 import '../services/image_upload_service.dart';
 import '../config/app_constants.dart';
-import '../models/user_model.dart';
 import 'privacy_policy_screen.dart';
 import 'login_screen.dart';
 import 'package:banho_tosa/providers/user_provider.dart';
